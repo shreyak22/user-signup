@@ -1,59 +1,21 @@
 from flask import Flask, request, redirect 
+import cgi
+import os
+import jinja2
+
+template_dir = os.path.join(os.path.dirname(__file__), 'templates')
+jinja_env = jinja2.Environment(loader = jinja2.FileSystemLoader(template_dir), autoescape=True)
 
 
 app = Flask(__name__)
 app.config['DEBUG'] = True
 
-form = '''
-<html><head>
-        <style>
-            .error {{
-                color: red;
-            }}
-        </style>
-    </head>
-    <body>
-    <h1>Signup</h1>
-        <form method="post">
-            <table>
-                <tbody><tr>
-                    <td><label for="username">Username</label></td>
-                    <td>
-                        <input name="username" type="text" value="{4}">
-                        <span class="error">{0}</span>
-                    </td>
-                </tr>
-                <tr>
-                    <td><label for="password">Password</label></td>
-                    <td>
-                        <input name="password" type="password">
-                        <span class="error">{1}</span>
-                    </td>
-                </tr>
-                <tr>
-                    <td><label for="verify">Verify Password</label></td>
-                    <td>
-                        <input name="verify" type="password">
-                        <span class="error">{2}</span>
-                    </td>
-                </tr>
-                <tr>
-                    <td><label for="email">Email (optional)</label></td>
-                    <td>
-                        <input name="email" value="{5}">
-                        <span class="error">{3}</span>
-                    </td>
-                </tr>
-            </tbody></table>
-            <input type="submit">
-        </form>
-    
-</body>
-</html>
-'''
+
 @app.route("/")
 def index():
-    return form.format("","","","","","")
+    template = jinja_env.get_template('base.html')
+    return template.render(user_error="",pass_error="",confirm_error="",email_error="",user_value="",email_value="")
+   
 
 @app.route("/", methods=['POST'])
 def verify():
@@ -69,8 +31,11 @@ def verify():
 
     if user_verified == "" and password_verified =="" and retype_verified =="" and email_verified=="":
         return redirect('/valid-form?username={0}'.format(username))
+
+    template = jinja_env.get_template('base.html')
+    return template.render(user_error=user_verified,pass_error=password_verified,confirm_error=retype_verified,email_error=email_verified,user_value=username,email_value=email)
    
-    return form.format(user_verified, password_verified, retype_verified, email_verified, username,email)
+    
     
 
 
@@ -104,7 +69,8 @@ def verify_email(email):
 @app.route('/valid-form')
 def valid_form():
     user = request.args.get('username')
-    return '<h1>Welcome! {0}.</h1>'.format(user)
+    template = jinja_env.get_template('welcome.html')
+    return template.render(username=user)
 
 
 app.run()
